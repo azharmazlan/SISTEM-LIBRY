@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Sistem Pengurusan Alamanda</title>
+    <meta name="description" content="Sistem Pengurusan Pusat Sumber Alamanda - Kehadiran, Point, Pinjaman Buku & Queue">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f4c75">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alamanda">
+
+    <!-- Icons / Favicon (logo KV) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+<header>
+    <div class="logo-header-top">
+        <img src="icons/icon-512.png" alt="Logo KV" class="logo-center-top">
+    </div>
+    <div class="header-title">
+        <h1><i class="fas fa-book-open"></i> Pusat Sumber Alamanda</h1>
+        <p>Sistem Pengurusan Alamanda</p>
+    </div>
+    <nav class="header-nav">
+        <button class="nav-btn active" onclick="showPage('scan')" id="nav-scan"><i class="fas fa-wifi"></i> Imbas NFC</button>
+        <button class="nav-btn" onclick="showPage('kehadiran')" id="nav-kehadiran"><i class="fas fa-clipboard-check"></i> Kehadiran</button>
+        <button class="nav-btn" onclick="showPage('queque')" id="nav-queque"><i class="fas fa-list-ol"></i> Sistem Queue</button>
+        <button class="nav-btn" onclick="showPage('daftar')" id="nav-daftar"><i class="fas fa-user-plus"></i> Daftar</button>
+        <button class="nav-btn" onclick="showPage('sesi')" id="nav-sesi"><i class="fas fa-clock"></i> Sesi Hari Ini</button>
+        <button class="nav-btn" onclick="showPage('ahli')" id="nav-ahli"><i class="fas fa-users"></i> Senarai Ahli</button>
+        <button class="nav-btn" onclick="openPaymentModal()" id="nav-payment"><i class="fas fa-money-bill-wave"></i> Pembayaran</button>
+        <button class="nav-btn" onclick="openTopupModal()" id="nav-topup"><i class="fas fa-plus-circle"></i> Tambah Nilai</button>
+        <button class="nav-btn" onclick="openLoanModal()" id="nav-loan"><i class="fas fa-book"></i> Pinjaman</button>
+        <button class="nav-btn" onclick="openReturnModal()" id="nav-return"><i class="fas fa-undo-alt"></i> Pemulangan</button>
+        <button class="nav-btn" onclick="showPage('admin')" id="nav-admin"><i class="fas fa-shield-halved"></i> Admin</button>
+    </nav>
+</header>
+<main>
+    <!-- IMBAS NFC -->
+    <div class="page active" id="page-scan">
+        <div class="scan-dashboard">
+            <div>
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-layer-group"></i> Kehadiran Batch (Bulan Ini)</h3>
+                    <ul id="batchActivityList" class="batch-list"><li>Loading...</li></ul>
+                    <div style="margin-top: 12px; font-size: 0.7rem; color: var(--text-muted); text-align: center;">batch dengan kekerapan tertinggi akan berada di atas</div>
+                </div>
+                <div class="dashboard-card" style="margin-top:16px">
+                    <h3><i class="fas fa-book-open"></i> Sedang Dipinjam <span id="activeLoanMonthLabel" style="font-size:0.72rem;font-weight:400;color:var(--text-muted)"></span></h3>
+                    <div id="activeLoansList"><div style="font-size:0.82rem;color:var(--text-muted)">Loading...</div></div>
+                </div>
+            </div>
+            <div>
+                <div class="scan-hero">
+                    <div class="nfc-icon-wrap"><i class="fas fa-wifi"></i></div>
+                    <h2>Imbas Kad NFC</h2>
+                    <p>Letakkan kad pada card reader untuk login/logout</p>
+                    <div class="nfc-input-group">
+                        <input type="text" class="nfc-input" id="nfcInput" placeholder="Scan atau taip manual..." autofocus autocomplete="off">
+                        <button class="scan-btn" id="scanBtn" onclick="doScan()"><i class="fas fa-bolt"></i> Imbas</button>
+                    </div>
+                </div>
+                <div id="scanResult" class="scan-result"></div>
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-circle-dot"></i> Sedang Berada Di Dalam
+                        <span id="liveCount" style="margin-left:auto;font-size:0.82rem;color:var(--text-muted);font-weight:400"></span>
+                    </div>
+                    <div id="liveSessions" class="session-grid"><div class="empty-state"><i class="fas fa-door-open"></i><p>Tiada sesi aktif</p></div></div>
+                </div>
+            </div>
+            <div>
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-trophy"></i> Leaderboard Point Tertinggi</h3>
+                    <ul id="leaderboardList" class="leaderboard-list"><li>Loading...</li></ul>
+                    <div style="margin-top: 12px; font-size: 0.7rem; color: var(--text-muted); text-align: center;">100 point = RM 1.00</div>
+                </div>
+                <div class="dashboard-card" style="margin-top:16px">
+                    <h3><i class="fas fa-book-reader"></i>Peminjam Paling Banyak<span id="topBorrowerMonthLabel" style="font-size:0.72rem;font-weight:400;color:var(--text-muted)"></span></h3>
+                    <div id="topBorrowersList"><div style="font-size:0.82rem;color:var(--text-muted)">Loading...</div></div>
+                    <div style="margin-top: 12px; font-size: 0.7rem; color: var(--text-muted); text-align: center;">jumlah pinjaman bulan ini</div>
+                </div>
+            </div>
+        </div>
+        <a href="https://wa.me/601169387861?text=Assalamualaikum%20En.%20Azhar,%20saya%20perlukan%20bantuan%20berkaitan%20sistem%20pengurusan" target="_blank" style="display: inline-block; margin-top: 20px;"><i class="fab fa-whatsapp"></i> Hubungi Sokongan Teknikal</a>
+        <p style="margin-top: 20px; text-align: center;">&copy; <span id="current-year"></span> VocKAF - Sistem Ahli & Bertugas. powered by <strong>AzharMazlanEtn</strong>.<br>Hak cipta terpelihara.</p>
+    </div>
+
+    <!-- QUEUE -->
+    <div class="page" id="page-queque">
+        <div class="queque-app">
+          <div class="q-top-bar">
+            <div>
+              <div class="q-app-title">Sistem Queue</div>
+              <div class="q-app-sub">— mengurus queue dalam Pusat Sumber Alamanda —</div>
+            </div>
+            <button class="q-btn-ghost" onclick="qResetAll()">↺ Reset Semua</button>
+          </div>
+          <div class="q-pay-alert" id="qPayAlert">
+            <div class="q-pay-alert-icon">💳</div>
+            <div class="q-pay-alert-text">
+              <strong id="qPayAlertName">—</strong>
+              Sedia untuk pembayaran — lihat Kaunter Pembayaran di bawah
+            </div>
+          </div>
+          <div class="q-card">
+            <div class="q-card-head">
+              <div class="q-card-head-left">
+                <div class="q-stage-dot" style="background:#888;"></div>
+                <div>
+                  <div class="q-card-title">Status PC</div>
+                  <div class="q-card-sub">Klik "Siap" apabila urusan selesai — akan dihantar masuk giliran bayar</div>
+                </div>
+              </div>
+            </div>
+            <div class="q-pc-grid" id="qPcGrid"></div>
+          </div>
+          <div class="q-two-col">
+            <div class="q-card">
+              <div class="q-card-head">
+                <div class="q-card-head-left">
+                  <div class="q-stage-dot q-dot-blue"></div>
+                  <div>
+                    <div class="q-card-title">Kaunter Urusan</div>
+                    <div class="q-card-sub">Panggil &amp; assign ke PC</div>
+                  </div>
+                </div>
+                <span class="q-count-badge" id="qUBadge">0 menunggu</span>
+              </div>
+              <div class="q-active-display" id="qUDisplay">
+                <div class="q-pulse-ring"></div><div class="q-pulse-ring"></div><div class="q-pulse-ring"></div>
+                <div class="q-ad-label">Giliran Sekarang</div>
+                <div class="q-ad-name" id="qUName">—</div>
+                <div class="q-ad-info" id="qUInfo">Tekan Panggil untuk mula</div>
+                <div class="q-pc-badge-display" id="qUPcBadge" style="display:none;">PC —</div>
+              </div>
+              <div style="padding:.75rem 1.25rem;border-bottom:0.5px solid rgba(0,0,0,0.09);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:12px;color:#6b6b6b;font-weight:500;">Assign ke:</span>
+                <button class="q-btn-ghost q-btn-sm" onclick="qAssignPC(1)" id="qPcBtn1">PC 1</button>
+                <button class="q-btn-ghost q-btn-sm" onclick="qAssignPC(2)" id="qPcBtn2">PC 2</button>
+                <button class="q-btn-ghost q-btn-sm" onclick="qAssignPC(3)" id="qPcBtn3">PC 3</button>
+                <button class="q-btn-ghost q-btn-sm" onclick="qAssignPC(4)" id="qPcBtn4">PC 4</button>
+              </div>
+              <div style="padding:.5rem 1.25rem;border-bottom:0.5px solid rgba(0,0,0,0.09);">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b6b6b;margin-bottom:5px;">
+                  <span>Kemajuan</span><span id="qUProg">0 / 0</span>
+                </div>
+                <div class="q-prog-bar-bg"><div class="q-prog-fill" id="qUFill" style="width:0%"></div></div>
+              </div>
+              <div class="q-scroll" id="qUList"></div>
+              <div class="q-ctrl-row">
+                <button class="q-btn-primary" id="qUNext" onclick="qCallUrusan()">▶ Panggil Seterusnya</button>
+                <button class="q-btn-ghost" id="qURepeat" onclick="qRepeatUrusan()" disabled>🔁</button>
+              </div>
+              <div class="q-add-area">
+                <div class="q-add-label-sm">Tambah Nama</div>
+                <div class="q-add-row">
+                  <input type="text" id="qUInput" placeholder="Nama pelanggan..." onkeydown="if(event.key==='Enter')qAddName()"/>
+                  <button class="q-btn-add" onclick="qAddName()">+ Tambah</button>
+                </div>
+              </div>
+            </div>
+            <div class="q-card">
+              <div class="q-card-head">
+                <div class="q-card-head-left">
+                  <div class="q-stage-dot q-dot-green"></div>
+                  <div>
+                    <div class="q-card-title">Kaunter Pembayaran</div>
+                    <div class="q-card-sub">Panggil setelah urusan selesai</div>
+                  </div>
+                </div>
+                <span class="q-count-badge" id="qPBadge">0 menunggu</span>
+              </div>
+              <div class="q-active-display q-green-display" id="qPDisplay">
+                <div class="q-pulse-ring"></div><div class="q-pulse-ring"></div><div class="q-pulse-ring"></div>
+                <div class="q-ad-label">Sila Ke Kaunter Bayar</div>
+                <div class="q-ad-name" id="qPName">—</div>
+                <div class="q-ad-info" id="qPInfo">Tiada panggilan lagi</div>
+              </div>
+              <div style="padding:.5rem 1.25rem;border-bottom:0.5px solid rgba(0,0,0,0.09);">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b6b6b;margin-bottom:5px;">
+                  <span>Kemajuan</span><span id="qPProg">0 / 0</span>
+                </div>
+                <div class="q-prog-bar-bg"><div class="q-prog-fill q-green" id="qPFill" style="width:0%"></div></div>
+              </div>
+              <div class="q-scroll" id="qPList"></div>
+              <div class="q-ctrl-row">
+                <button class="q-btn-green" id="qPNext" onclick="qCallPayment()">▶ Panggil Untuk Bayar</button>
+                <button class="q-btn-ghost" id="qPRepeat" onclick="qRepeatPayment()" disabled>🔁</button>
+              </div>
+            </div>
+          </div>
+          <div class="q-log-bar">
+            <div class="q-log-dot" id="qLogDot"></div>
+            <div class="q-log-text" id="qLogText">Sistem sedia. Tambah nama dan mula panggil.</div>
+          </div>
+        </div>
+    </div>
+
+    <!-- DAFTAR -->
+    <div class="page" id="page-daftar">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-user-plus"></i> Daftar Ahli / Bertugas Baru</div>
+            <div class="form-grid">
+                <div class="form-group"><label>ID Kad NFC</label><input type="text" id="regNfc" placeholder="Imbas atau taip ID kad..."></div>
+                <div class="form-group"><label>No. IC (pilihan)</label><input type="text" id="regIc" placeholder="cth: xxxxxx-xx-xxxx"></div>
+                <div class="form-group"><label>Nama Penuh</label><input type="text" id="regName" placeholder="Nama penuh..."></div>
+                <div class="form-group"><label>Kategori</label><select id="regCategory" onchange="toggleRoleAndExpiry()"><option value="">-- Pilih Kategori --</option><option value="bertugas">Bertugas (Pengawas Pusat Sumber)</option><option value="ahli">Ahli (Pengumpul Point)</option></select></div>
+                <div class="form-group" id="roleGroup" style="display:none"><label>Peranan</label><select id="regRole" onchange="toggleKelasInput()"><option value="">-- Pilih Peranan --</option><option value="guru">Guru</option><option value="pelajar">Pelajar</option><option value="AKP">AKP</option></select></div>
+                <div class="form-group" id="kelasGroup" style="display:none"><label>Kelas (untuk Pelajar)</label><input type="text" id="regKelas" placeholder="cth: 5 Bestari"><small>Hanya isi jika peranan = Pelajar</small></div>
+                <div class="form-group" id="initialPointsGroup" style="display:none"><label>Point Permulaan (Ahli sahaja)</label><input type="number" id="regInitialPoints" value="0" min="0" step="1"><small>100 point = RM 1.00</small></div>
+                <div class="form-group" id="expiryGroup" style="display:none"><label>Tarikh Tamat (pilihan)</label><input type="date" id="regExpiry"><small>Biarkan kosong jika tiada had tamat</small></div>
+                <div class="form-group" id="batchGroup" style="display:none"><label>Nombor Batch (cth: 06)</label><input type="text" id="regBatch" placeholder="Contoh: 06"></div>
+            </div>
+            <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" onclick="registerMember()"><i class="fas fa-plus-circle"></i> Daftar Sekarang</button><button class="btn btn-success" onclick="openBulkRegisterModal()"><i class="fas fa-file-upload"></i> Daftar Sekaligus</button><button class="btn btn-warning" onclick="openAssignNfcModal()"><i class="fas fa-id-card"></i> Setkan Sebagai Ahli</button><button class="btn btn-primary" onclick="showPage('updateahli')" style="background:linear-gradient(135deg,#7c3aed,#a855f7)"><i class="fas fa-user-edit"></i> Update Ahli</button></div>
+            <hr class="divider">
+            <div style="background:#f0f9ff;border-radius:12px;padding:16px 20px;font-size:0.84rem;color:var(--text-muted);line-height:1.8">
+                <b style="color:var(--primary)"><i class="fas fa-info-circle"></i> Maklumat Sistem:</b><br>
+                • <b>Bertugas</b>: Guru, Pelajar, AKP yang bertugas di Pusat Sumber.<br>
+                <b>SILA TETAPKAN</b>:
+                <br>• BATCH BAGI GURU -1-.<br>
+                • BATCH BAGI AKP      -2-.<br>
+                • BATCH BAGI sekaligus(guru/akp) -3-.<br>
+                • <b>Ahli</b>: Murid biasa yang mengumpul point. 100 point = RM 1.00.<br>
+                • Point permulaan boleh ditetapkan semasa daftar.<br>
+                • Auto-logout: pagi->1ptg, 12-4ptg->5ptg, 5ptg->12mlm.<br>
+                • Jika pinjaman dibuat dengan mengunakan ic,jangan daftar ahli selagi belum pulang buku.
+            </div>
+        </div>
+    </div>
+
+    <!-- UPDATE AHLI (BULK CLASS UPDATE) -->
+    <div class="page" id="page-updateahli">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-user-edit"></i> Update Ahli — Kemaskini Kelas sekaligus/individu</div></i> nombor depan ic ialah penentu batch</div>
+            <div class="form-grid">
+                <div class="form-group"><label>Nombor Batch</label><input type="text" id="upBatch" placeholder="cth: 06"></div>
+                <div class="form-group"><label>Filter Course</label>
+                    <select id="upCourse">
+                        <option value="">-- Semua Course --</option>
+                        <option value="ETN">ETN</option>
+                        <option value="ETE">ETE</option>
+                        <option value="MTK">MTK</option>
+                        <option value="MTA">MTA</option>
+                        <option value="BAK">BAK</option>
+                        <option value="BKP">BKP</option>
+                        <option value="PPU">PPU</option>
+                        <option value="MPI">MPI</option>
+                        <option value="CTP">CTP</option>
+                        <option value="GURU">GURU</option>
+                        <option value="AKP">AKP</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Kelas Baru</label><input type="text" id="upNewKelas" placeholder="cth: 2 DVM ETN"></div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-primary" onclick="loadBulkMembersByBatch()"><i class="fas fa-search"></i> Papar Ahli</button>
+                <button class="btn btn-success" onclick="bulkUpdateKelas()"><i class="fas fa-save"></i> Kemaskini</button>
+                <button class="btn btn-outline" onclick="showPage('daftar')"><i class="fas fa-arrow-left"></i> Kembali</button>
+            </div>
+            <hr class="divider">
+            <div id="upMembersInfo" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:10px"></div>
+            <div class="table-wrap">
+                <table><thead><tr><th>Bil</th><th>Nama</th><th>No. IC</th><th>Kelas/status Sekarang</th><th>Batch</th><th>Kategori/Cara pendaftaran</th><th>Tindakan</th></tr></thead>
+                <tbody id="upMembersBody"><tr><td colspan="7" class="empty-state">Masukkan batch dan tekan "Papar Ahli"</td></tr></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <!-- KEHADIRAN IC/BULK -->
+    <div class="page" id="page-kehadiran">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-clipboard-check"></i> KEHADIRAN.(JANGAN UBAH PAGE*LETAK IC DAN TERUS TEKAN ENTER*)</div>
+            <div style="background:#f0f9ff;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:0.85rem;color:var(--text-muted)">
+                <i class="fas fa-info-circle"></i> SILA GUNAKAN IC ANDA.
+            </div>
+            <div class="form-grid">
+                <div class="form-group"><label>No. IC</label><input type="text" id="bulkAttIc" placeholder="Masukkan No. IC..." onkeydown="if(event.key==='Enter') bulkAttendanceCheckin()" autocomplete="off"></div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-primary" onclick="bulkAttendanceCheckin()"><i class="fas fa-check-circle"></i> Rekod Kehadiran</button>
+                <button class="btn btn-outline" onclick="loadBulkAttendanceList()"><i class="fas fa-rotate"></i> Muat Semula</button>
+            </div>
+            <div id="bulkAttResult" style="margin-top:14px"></div>
+            <hr class="divider">
+            <div class="card-title" style="font-size:1rem"><i class="fas fa-list"></i> Senarai Kehadiran Hari Ini</div>
+            <div class="table-wrap">
+                <table><thead><tr><th>Nama</th><th>No. IC</th><th>Kelas</th><th>Tarikh</th><th>Masa</th></tr></thead>
+                <tbody id="bulkAttBody"><tr><td colspan="5" class="empty-state">Tiada rekod hari ini</td></tr></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SESI HARI INI -->
+    <div class="page" id="page-sesi">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-calendar-day"></i> Sesi Kehadiran Hari Ini
+                <button class="btn btn-outline btn-sm" style="margin-left:auto" onclick="loadTodaySessions()"><i class="fas fa-rotate"></i> Muat Semula</button>
+            </div>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="filterSessions('semua')">Semua</button>
+                <button class="tab-btn" onclick="filterSessions('bertugas')">Bertugas</button>
+                <button class="tab-btn" onclick="filterSessions('ahli')">Ahli</button>
+                <button class="tab-btn" onclick="filterSessions('aktif')">Aktif</button>
+            </div>
+            <div class="table-wrap">
+                <table id="sessionsTable"><thead><tr><th>Nama</th><th>Kategori</th><th>Waktu Masuk</th><th>Waktu Keluar</th><th>Tempoh</th><th>Status / Point</th></tr></thead><tbody id="sessionsBody"><tr><td colspan="6" class="empty-state"><i class="fas fa-spinner fa-spin"></i> Memuatkan...</td></tr></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SENARAI AHLI -->
+    <div class="page" id="page-ahli">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-users"></i> Senarai Ahli & Bertugas
+                <button class="btn btn-outline btn-sm" style="margin-left:auto" onclick="loadMembers()"><i class="fas fa-rotate"></i> Muat Semula</button>
+            </div>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="filterMembers('semua')">Semua</button>
+                <button class="tab-btn" onclick="filterMembers('ahli')">Ahli</button>
+                <button class="tab-btn" onclick="filterMembers('bertugas')">Bertugas</button>
+            </div>
+            <div class="table-wrap">
+                <table><thead><tr><th>Nama</th><th>NFC ID</th><th>No. IC</th><th>Kategori</th><th>Point / Status</th><th>Tarikh Daftar</th><th>Tarikh Tamat</th><th>Baki Tempoh</th><th>Batch</th><th>Tindakan</th></tr></thead><tbody id="membersBody"><tr><td colspan="9" class="empty-state"><i class="fas fa-spinner fa-spin"></i> Memuatkan...</td></tr></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN (fixed) -->
+    <div class="page" id="page-admin">
+        <div id="adminLogin" class="admin-login-wrap">
+            <div class="card"><div class="card-title"><i class="fas fa-lock"></i> Log Masuk Admin</div>
+                <div class="form-group"><label>Kata Laluan Admin</label><input type="password" id="adminPass" onkeydown="if(event.key==='Enter') adminLogin()"></div>
+                <div style="margin-top:16px"><button class="btn btn-primary" onclick="adminLogin()"><i class="fas fa-sign-in-alt"></i> Log Masuk</button></div>
+            </div>
+        </div>
+        <div id="adminPanel" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+                <h2 style="font-size:1.2rem;font-weight:800;color:var(--primary)"><i class="fas fa-shield-halved"></i> Panel Admin</h2>
+                <button class="btn btn-danger btn-sm" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Log Keluar</button>
+            </div>
+            <div class="admin-grid" style="margin-bottom:20px">
+                <div class="stat-card"><div class="stat-num" id="statAhli">—</div><div class="stat-label">Jumlah Ahli</div></div>
+                <div class="stat-card green"><div class="stat-num" id="statBertugas">—</div><div class="stat-label">Jumlah Petugas</div></div>
+                <div class="stat-card orange"><div class="stat-num" id="statSesiHariIni">—</div><div class="stat-label">Aktif Hari Ini</div></div>
+                <div class="stat-card red"><div class="stat-num" id="statPoints">—</div><div class="stat-label">Jumlah Point Aktif</div></div>
+            </div>
+            <div class="card" style="margin-bottom:20px">
+                <div class="card-title"><i class="fas fa-file-excel"></i> Muat Turun Laporan Excel</div>
+                <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px">
+                    <div class="form-group" style="margin:0">
+                        <label style="font-size:0.82rem;font-weight:600;margin-bottom:4px;display:block"><i class="fas fa-calendar-alt"></i> Pilih Bulan</label>
+                        <input type="month" id="downloadMonth" style="padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:0.9rem;background:var(--surface);color:var(--text)">
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="btn btn-success" onclick="downloadExcelByMonth('ahli_point_attendance')" style="background:linear-gradient(135deg,#cdaf07,#f10303)"><i class="fas fa-star"></i> Kehadiran Ahli Mengumpul Point</button>
+                        <button class="btn btn-success" onclick="downloadExcelByMonth('ahli_nfc')" style="background:linear-gradient(135deg,#0f4c75,#1b6ca8)"><i class="fas fa-wifi"></i> Ahli NFC</button>
+                        <button class="btn btn-primary" onclick="downloadExcelByMonth('bertugas')"><i class="fas fa-download"></i> Laporan Bertugas</button>
+                        <button class="btn btn-primary" onclick="downloadExcelByMonth('senarai_bertugas')" style="background:linear-gradient(135deg,#059669,#10b981)"><i class="fas fa-list-check"></i> Senarai Nama Bertugas</button>
+                        <button class="btn btn-warning" onclick="downloadExcelByMonth('pinjaman')"><i class="fas fa-download"></i> Rekod Pinjaman &amp; Pemulangan</button>
+                        <button class="btn btn-success" onclick="downloadExcelByMonth('bulk_attendance')" style="background:linear-gradient(135deg,#7c3aed,#a855f7)"><i class="fas fa-clipboard-check"></i> Download Kehadiran menggunakan IC</button>
+                    </div>
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-muted)"><i class="fas fa-info-circle"></i> Kosongkan bulan untuk muat turun <strong>semua rekod</strong>. Pilih bulan untuk data bulan tertentu sahaja.</div>
+            </div>
+            <div class="card" style="margin-bottom:20px">
+                <div class="card-title"><i class="fas fa-trash-alt"></i> Padam mengikut bulan daftar</div>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+                    <div class="form-group"><label>Pilih Bulan</label><input type="month" id="deleteMonth"></div>
+                    <button class="btn btn-danger" onclick="deleteByMonth('ahli')">Padam Semua Ahli (bulan ini)</button>
+                    <button class="btn btn-danger" onclick="deleteByMonth('bertugas')">Padam Semua Bertugas (bulan ini)</button>
+                </div>
+            </div>
+            <div class="card" style="margin-bottom:20px">
+                <div class="card-title"><i class="fas fa-layer-group"></i> Urus Batch</div>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end">
+                    <div class="form-group"><label>Nombor Batch</label><input type="text" id="batchSearchInput" placeholder="cth: 06" onkeyup="filterAdminMembersByBatch()"></div>
+                    <button class="btn btn-primary" onclick="filterAdminMembersByBatch()"><i class="fas fa-search"></i> Cari Batch</button>
+                    <button class="btn btn-danger" onclick="deleteBatch()"><i class="fas fa-trash-alt"></i> Padam Batch Ini</button>
+                </div>
+                <div id="batchSearchResult" style="margin-top:12px; font-size:0.85rem; color:var(--text-muted)"></div>
+            </div>
+            <div class="card">
+                <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><span><i class="fas fa-users-cog"></i> Urus Ahli &amp; Point</span><button class="btn btn-primary btn-sm" onclick="showPage('urusBertugas')" style="background:linear-gradient(135deg,#0f4c75,#00b4d8)"><i class="fas fa-user-shield"></i> Urus Bertugas</button></div>
+                <div class="form-group" style="margin-bottom:16px"><label>Cari Nama</label><input type="text" id="adminMemberSearch" placeholder="Taip nama untuk cari..." onkeyup="filterAdminMembers()"></div>
+                <div class="table-wrap">
+                    <table><thead><tr><th>Nama</th><th>Kategori</th><th>Point</th><th>Tarikh Daftar</th><th>Tarikh Tamat</th><th>Baki Tempoh</th><th>Batch</th><th>Tindakan</th></tr></thead>
+                    <tbody id="adminMembersBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+<!-- FINE PAYMENT MODAL -->
+<div class="modal-overlay" id="finePayModal">
+    <div class="modal" style="max-width:480px">
+        <div class="modal-title" style="color:#dc2626"><i class="fas fa-exclamation-triangle"></i> Bayaran Denda Lewat</div>
+        <input type="hidden" id="fineLoanId">
+        <div style="background:#fff5f5;border-radius:10px;padding:14px 16px;margin-bottom:14px;border:1px solid #fecaca">
+            <div id="fineLoanInfo" style="font-size:0.9rem;font-weight:600;color:#dc2626"></div>
+            <div id="fineDendaAmt" style="font-size:1.4rem;font-weight:800;color:#dc2626;margin-top:6px"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+            <label>Kaedah Bayaran Denda</label>
+            <select id="finePayMethod" onchange="toggleFinePayMethod()">
+                <option value="kad">Kad (Tolak Point)</option>
+                <option value="tunai">Tunai</option>
+            </select>
+        </div>
+        <div id="fineKadSection">
+            <div class="form-group" style="margin-bottom:8px">
+                <label>Tap Kad Ahli untuk Bayar</label>
+                <input type="text" id="finePayNfc" placeholder="Tap kad NFC di sini..." autocomplete="off">
+            </div>
+            <div id="finePayMemberInfo" style="background:#f1f5f9;padding:8px 12px;border-radius:8px;font-size:0.85rem;min-height:32px;margin-bottom:10px"></div>
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px"><i class="fas fa-info-circle"></i> Tap kad → point akan ditolak automatik → tekan <b>Bayar</b></div>
+        </div>
+        <div id="fineTunaiSection" style="display:none">
+            <div style="background:#f0fdf4;border-radius:8px;padding:10px 14px;font-size:0.88rem;color:#059669;margin-bottom:10px"><i class="fas fa-money-bill"></i> Terima tunai, kemudian tekan <b>Bayar</b> untuk sahkan</div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('finePayModal')">Batal</button>
+            <button class="btn btn-danger" onclick="submitFinePay()"><i class="fas fa-check-circle"></i> Bayar Denda &amp; Pulang Buku</button>
+        </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- URUS BERTUGAS PAGE - OUTSIDE MAIN, AS STANDALONE PAGE -->
+<div class="page" id="page-urusBertugas" style="padding:20px;max-width:1200px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <h2 style="font-size:1.2rem;font-weight:800;color:var(--primary)"><i class="fas fa-user-shield"></i> Pengurusan bahagian bertugas</h2>
+        <button class="btn btn-outline btn-sm" onclick="showPage('admin')"><i class="fas fa-arrow-left"></i> Kembali ke menu utama Admin</button>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+        <div class="card-title"><i class="fas fa-filter"></i> Carian &amp; filter atau kosongkan</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+            <div class="form-group" style="margin:0"><label>Cari Nama</label><input type="text" id="bertugasSearchName" placeholder="Taip nama..." oninput="filterBertugasList()"></div>
+            <div class="form-group" style="margin:0"><label>Batch</label><input type="text" id="bertugasFilterBatch" placeholder="cth: 06" oninput="filterBertugasList()"></div>
+            <div class="form-group" style="margin:0"><label>Kelas</label><input type="text" id="bertugasFilterKelas" placeholder="cth: 2 DVM" oninput="filterBertugasList()"></div>
+            <div class="form-group" style="margin:0"><label>Kategori/Peranan</label>
+                <select id="bertugasFilterKategori" onchange="filterBertugasList()">
+                    <option value="">Semua</option>
+                    <option value="Pelajar">Pelajar</option>
+                    <option value="Guru">Guru</option>
+                    <option value="AKP">AKP</option>
+                </select>
+            </div>
+        </div>
+        <div id="bertugasInfo" style="margin-top:10px;font-size:0.85rem;color:var(--text-muted)"></div>
+    </div>
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>#</th><th>Nama</th><th>UID/NFC</th><th>Batch</th><th>Kelas</th><th>Course</th><th>Kategori/Peranan</th><th>Jenis Ahli</th><th>Tindakan</th></tr></thead>
+                <tbody id="bertugasListBody"><tr><td colspan="9" class="empty-state">Memuatkan...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS (unchanged) -->
+<div class="modal-overlay" id="pointModal"><div class="modal"><div class="modal-title"><i class="fas fa-star"></i> Urus Point Ahli</div><input type="hidden" id="pointMemberId"><div class="form-group"><label>Nama Ahli</label><input type="text" id="pointMemberName" readonly></div><div class="form-group"><label>Point Semasa</label><input type="text" id="pointMemberCurrent" readonly></div><div class="form-grid"><div class="form-group"><label>Tindakan</label><select id="pointAction"><option value="tambah">Tambah Point</option><option value="tebus">Tebus Point</option></select></div><div class="form-group"><label>Jumlah Point</label><input type="number" id="pointAmount" min="1"></div><div class="form-group full"><label>Nota</label><input type="text" id="pointNote"></div></div><div class="modal-actions"><button class="btn btn-outline" onclick="closeModal('pointModal')">Batal</button><button class="btn btn-primary" onclick="submitPoint()">Simpan</button></div></div></div>
+<div class="modal-overlay" id="deleteModal"><div class="modal"><div class="modal-title" style="color:var(--danger)"><i class="fas fa-triangle-exclamation"></i> Buang Ahli</div><input type="hidden" id="deleteMemberId"><p>Anda pasti mahu membuang <b id="deleteMemberName"></b>? Semua rekod akan dipadam.</p><div class="modal-actions"><button class="btn btn-outline" onclick="closeModal('deleteModal')">Batal</button><button class="btn btn-danger" onclick="confirmDelete()">Ya, Buang</button></div></div></div>
+<div class="modal-overlay" id="expiryModal"><div class="modal"><div class="modal-title"><i class="fas fa-calendar-alt"></i> Tetapkan Tarikh Tamat</div><input type="hidden" id="expiryMemberId"><div class="form-group"><label>Nama Ahli</label><input type="text" id="expiryMemberName" readonly></div><div class="form-group"><label>Tarikh Tamat</label><input type="date" id="expiryDate"><small>Kosongkan untuk tiada had</small></div><div class="modal-actions"><button class="btn btn-outline" onclick="closeModal('expiryModal')">Batal</button><button class="btn btn-primary" onclick="setExpiryDate()">Simpan</button></div></div></div>
+<div class="modal-overlay" id="historyModal"><div class="modal" style="max-width:560px"><div class="modal-title"><i class="fas fa-history"></i> Sejarah Point — <span id="historyMemberName"></span></div><div id="historyList"></div><div class="modal-actions"><button class="btn btn-outline" onclick="closeModal('historyModal')">Tutup</button></div></div></div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="paymentModal">
+    <div class="modal">
+        <div class="modal-title"><i class="fas fa-money-bill-wave"></i> Bayaran Pusat Sumber</div>
+        <div class="form-group"><label>Kaedah Bayaran</label><select id="paymentMethod"><option value="kad">Kad (Tolak Point)</option><option value="tunai">Tunai (Rekod Sahaja)</option></select></div>
+        <div class="form-group"><label>Imbas Kad Ahli (untuk bayaran)</label><input type="text" id="paymentNfc" placeholder="Tap kad NFC di sini..." autocomplete="off"></div>
+        <div class="form-group"><label>Jumlah (RM)</label><input type="number" id="paymentAmount" step="0.01" min="0.01" placeholder="0.00" autofocus></div>
+        <div id="paymentMemberInfo" class="form-group" style="background:#f1f5f9; padding:8px; border-radius:8px;"></div>
+        <div class="form-group"><label>Nota (TAP CARD BARU LETAK JUMLAH THEN TEKAN ENTER BAGI MEMUDAHKAN PROSES)</label><input type="text" id="paymentNote"></div>
+        <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal('paymentModal')">Batal</button><button class="btn btn-primary" onclick="processPayment()"><i class="fas fa-check-circle"></i> Bayar</button></div>
+    </div>
+</div>
+
+<!-- TOPUP MODAL -->
+<div class="modal-overlay" id="topupModal">
+    <div class="modal">
+        <div class="modal-title"><i class="fas fa-plus-circle"></i> Tambah Nilai Point</div>
+        <div class="form-group"><label>Imbas Kad Ahli</label><input type="text" id="topupNfc" placeholder="Tap kad NFC di sini..." autocomplete="off"></div>
+        <div id="topupMemberInfo" class="form-group" style="background:#f1f5f9; padding:8px; border-radius:8px;"></div>
+        <div class="form-group"><label>Jumlah Tambah Nilai (RM)</label><input type="number" id="topupAmount" step="0.01" min="0.01" placeholder="0.00"></div>
+        <div class="form-group"><label>Nota (TAP CARD BARU LETAK JUMLAH THEN TEKAN ENTER BAGI MEMUDAHKAN PROSES)</label><input type="text" id="topupNote"></div>
+        <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal('topupModal')">Batal</button><button class="btn btn-primary" onclick="processTopup()"><i class="fas fa-check-circle"></i> Tambah</button></div>
+    </div>
+</div>
+
+<!-- LOAN MODAL -->
+<div class="modal-overlay" id="loanModal">
+    <div class="modal" style="max-width:560px">
+        <div class="modal-title"><i class="fas fa-book"></i> Pinjaman Buku</div>
+        <div id="loanStep1">
+            <div style="display:flex;gap:8px;margin-bottom:14px">
+                <button class="tab-btn active" id="loanTabNfc" onclick="switchLoanTab('nfc')"><i class="fas fa-wifi"></i> Tap Kad NFC</button>
+                <button class="tab-btn" id="loanTabIc" onclick="switchLoanTab('ic')"><i class="fas fa-id-card"></i> Guna No. IC</button>
+            </div>
+            <div id="loanNfcTab">
+                <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:12px">Tap kad pengguna untuk mula pinjaman</p>
+                <div class="form-group"><label>Tap / Imbas Kad (UID)</label>
+                    <div style="display:flex;gap:8px">
+                        <input type="text" id="loanNfc" placeholder="Tap kad NFC di sini..." autocomplete="off" style="flex:1">
+                        <button class="btn btn-primary btn-sm" onclick="loanCheckNfc()"><i class="fas fa-id-card"></i> Semak</button>
+                    </div>
+                </div>
+            </div>
+            <div id="loanIcTab" style="display:none">
+                <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:12px">Taip No. IC untuk cari peminjam (ahli atau bukan ahli)</p>
+                <div class="form-group"><label>No. IC</label>
+                    <div style="display:flex;gap:8px">
+                        <input type="text" id="loanIcSearch" placeholder="cth: xxxxxx-xx-xxxx" autocomplete="off" style="flex:1">
+                        <button class="btn btn-primary btn-sm" onclick="loanCheckIc()"><i class="fas fa-search"></i> Semak</button>
+                    </div>
+                </div>
+            </div>
+            <div id="loanNfcInfo" style="background:#f1f5f9;padding:10px 14px;border-radius:8px;font-size:0.88rem;min-height:32px;margin-top:8px"></div>
+        </div>
+        <div id="loanStep2" style="display:none">
+            <div class="form-grid">
+                <div class="form-group"><label>Nombor IC</label><input type="text" id="loanIc" placeholder="cth: xxxxxx-xx-xxxx"></div>
+                <div class="form-group"><label>Kelas</label><input type="text" id="loanKelas" placeholder="cth: 2 DVM ETN"></div>
+                <div class="form-group"><label>Nombor Buku</label><input type="text" id="loanBookNum" placeholder="cth: 6975225481428545"></div>
+                <div class="form-group"><label>Tajuk Buku</label><input type="text" id="loanBookTitle" placeholder="Tajuk buku..."></div>
+                <div class="form-group"><label>Tarikh Pinjam</label><input type="date" id="loanDate"></div>
+                <div class="form-group"><label>Tarikh Limit / Due Date</label><input type="date" id="loanDue"></div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('loanModal')">Batal</button>
+            <button class="btn btn-primary" id="loanActionBtn" onclick="handleLoanAction()"><i class="fas fa-arrow-right"></i> Seterusnya</button>
+        </div>
+    </div>
+</div>
+
+<!-- RETURN MODAL -->
+<div class="modal-overlay" id="returnModal">
+    <div class="modal" style="max-width:580px">
+        <div class="modal-title"><i class="fas fa-undo-alt"></i> Pemulangan Buku</div>
+        <div id="returnStep1">
+            <div style="display:flex;gap:8px;margin-bottom:14px">
+                <button class="tab-btn active" id="returnTabNfc" onclick="switchReturnTab('nfc')"><i class="fas fa-wifi"></i> Tap Kad NFC</button>
+                <button class="tab-btn" id="returnTabIc" onclick="switchReturnTab('ic')"><i class="fas fa-id-card"></i> Guna No. IC</button>
+            </div>
+            <div id="returnNfcTab">
+                <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:12px">Tap kad pengguna untuk semak pinjaman</p>
+                <div class="form-group"><label>Tap / Imbas Kad (UID)</label>
+                    <div style="display:flex;gap:8px">
+                        <input type="text" id="returnNfc" placeholder="Tap kad NFC di sini..." autocomplete="off" style="flex:1">
+                        <button class="btn btn-primary btn-sm" onclick="doReturnScan()"><i class="fas fa-search"></i> Semak</button>
+                    </div>
+                </div>
+            </div>
+            <div id="returnIcTab" style="display:none">
+                <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:12px">Taip No. IC untuk semak pinjaman aktif</p>
+                <div class="form-group"><label>No. IC</label>
+                    <div style="display:flex;gap:8px">
+                        <input type="text" id="returnIcInput" placeholder="cth: xxxxxx-xx-xxxx" autocomplete="off" style="flex:1">
+                        <button class="btn btn-primary btn-sm" onclick="doReturnScanIc()"><i class="fas fa-search"></i> Semak</button>
+                    </div>
+                </div>
+            </div>
+            <div id="returnNfcInfo" style="background:#f1f5f9;padding:10px 14px;border-radius:8px;font-size:0.88rem;min-height:32px;margin-top:8px"></div>
+        </div>
+        <div id="returnStep2" style="display:none">
+            <div id="returnLoanList" style="margin-bottom:12px"></div>
+            <div id="returnActionArea"></div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('returnModal')">Batal</button>
+            <button class="btn btn-primary" id="returnScanBtn" style="display:none" onclick="doReturnScan()"><i class="fas fa-search"></i> Semak Pinjaman</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- BULK REGISTER MODAL -->
+<div class="modal-overlay" id="bulkRegisterModal">
+    <div class="modal" style="max-width:600px">
+        <div class="modal-title"><i class="fas fa-file-upload"></i> Daftar Sekaligus (Upload Excel)</div>
+        <div style="background:#f0f9ff;border-radius:10px;padding:12px 16px;font-size:0.84rem;margin-bottom:16px">
+            <b><i class="fas fa-info-circle"></i> Format Excel:</b><br>
+            Kolum: <code>kelas | nama | no ic</code><br>
+            Baris pertama = header (akan dilangkau secara automatik)
+        </div>
+        <div class="form-grid">
+            <div class="form-group"><label>Upload File Excel (.xlsx)</label>
+                <input type="file" id="bulkExcelFile" accept=".xlsx,.xls" onchange="previewBulkExcel()">
+            </div>
+            <div class="form-group"><label>Nombor Batch</label>
+                <input type="text" id="bulkBatch" placeholder="cth: 06">
+            </div>
+            <div class="form-group"><label>Kategori</label>
+                <select id="bulkCategory"><option value="pelajar">Pelajar</option><option value="guru">Guru</option><option value="sekaligus">sekaligus</option></select>
+            </div>
+            <div class="form-group"><label>Tarikh Tamat (pilihan)</label>
+                <input type="date" id="bulkExpiry">
+            </div>
+        </div>
+        <div id="bulkPreview" style="margin-top:14px;max-height:220px;overflow-y:auto;font-size:0.82rem;border:1.5px solid var(--border);border-radius:8px;display:none">
+            <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="background:var(--primary);color:white"><th style="padding:8px">Kelas</th><th style="padding:8px">Nama</th><th style="padding:8px">No. IC</th></tr></thead>
+                <tbody id="bulkPreviewBody"></tbody>
+            </table>
+        </div>
+        <div id="bulkPreviewCount" style="font-size:0.82rem;color:var(--text-muted);margin-top:8px"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('bulkRegisterModal')">Batal</button>
+            <button class="btn btn-success" onclick="submitBulkRegister()"><i class="fas fa-upload"></i> Daftar Semua</button>
+        </div>
+    </div>
+</div>
+
+<!-- ASSIGN NFC MODAL (Setkan Sebagai Ahli) -->
+<div class="modal-overlay" id="assignNfcModal">
+    <div class="modal" style="max-width:560px">
+        <div class="modal-title"><i class="fas fa-id-card"></i> Setkan Sebagai Ahli — Tetapkan Kad NFC</div>
+        <div style="font-size:0.84rem;color:var(--text-muted);margin-bottom:14px">taip ic untuk set ahli <b>tidak perlu masukkan UID/SCAN hanya gunakan ic</b> masukkan No. IC → tap card → Simpan</div>
+
+        <!-- Tab: IC / NFC scan -->
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+            <button class="tab-btn active" id="assignTabIcBtn" onclick="switchAssignTab('ic')"><i class="fas fa-id-card"></i> Cari via No. IC</button>
+            <button class="tab-btn" id="assignTabNfcBtn" onclick="switchAssignTab('nfc')"><i class="fas fa-wifi"></i> Scan NFC Dulu (Hanya admin)</button>
+        </div>
+
+        <!-- IC search -->
+        <div id="assignTabIc">
+            <div class="form-group" style="margin-bottom:10px">
+                <label>No. IC Ahli</label>
+                <div style="display:flex;gap:8px">
+                    <input type="text" id="assignIc" placeholder="cth: xxxxxx-xx-xxxx" style="flex:1" onkeydown="if(event.key==='Enter') assignCheckIc()">
+                    <button class="btn btn-primary btn-sm" onclick="assignCheckIc()"><i class="fas fa-search"></i> Cari</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NFC scan first (untuk cari data) -->
+        <div id="assignTabNfc" style="display:none">
+            <div class="form-group" style="margin-bottom:10px">
+                <label>Scan Kad NFC (untuk kenali ahli)</label>
+                <input type="text" id="assignNfcLookup" placeholder="Tap kad NFC di sini untuk cari data ahli..." autocomplete="off" style="width:100%">
+            </div>
+        </div>
+
+        <!-- Info ahli yang dikenali -->
+        <div id="assignMemberInfo" style="background:#f1f5f9;padding:10px 14px;border-radius:8px;font-size:0.88rem;min-height:32px;margin-bottom:12px"></div>
+
+        <!-- NFC yang akan ditetapkan -->
+        <div class="form-group" style="margin-bottom:12px">
+            <label><i class="fas fa-wifi" style="color:var(--accent)"></i> Tap Kad NFC Baharu (untuk ditetapkan)</label>
+            <input type="text" id="assignNfcInput" placeholder="Tap kad NFC di sini..." autocomplete="off" style="width:100%">
+            <div id="assignNfcScanStatus" style="font-size:0.78rem;color:var(--text-muted);margin-top:4px"></div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Kategori Ahli -->
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Kategori Ahli</label>
+                <select id="assignCategory" onchange="onAssignCategoryChange()">
+                    <option value="ahli">Ahli Mengumpul Point</option>
+                    <option value="bertugas">Pengawas Bertugas</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Tarikh Tamat (pilihan)</label>
+                <input type="date" id="assignExpiry">
+            </div>
+        </div>
+
+        <!-- Kategori/Peranan (Guru / AKP / Pelajar) — muncul untuk Bertugas -->
+        <div id="assignKategoriPerananGroup" style="display:none">
+            <div class="form-group" style="margin-bottom:10px">
+                <label>Kategori / Peranan</label>
+                <select id="assignKategoriPeranan" onchange="onAssignKategoriPerananChange()">
+                    <option value="pelajar">Pelajar</option>
+                    <option value="guru">Guru</option>
+                    <option value="akp">AKP</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Kelas + Batch — untuk Ahli Mengumpul Point -->
+        <div id="assignAhliKelasGroup" class="form-grid">
+            <div class="form-group">
+                <label>Kelas <span style="color:#64748b;font-weight:400">(contoh: 2 DVM ETN)</span></label>
+                <input type="text" id="assignKelas" placeholder="cth: 2 DVM ETN">
+            </div>
+            <div class="form-group">
+                <label>Batch</label>
+                <input type="text" id="assignBatch" placeholder="cth: 06">
+            </div>
+        </div>
+
+        <!-- Kelas + Batch untuk Pelajar Bertugas -->
+        <div id="assignBertugasKelasGroup" style="display:none" class="form-grid">
+            <div class="form-group">
+                <label>Kelas <span style="color:#64748b;font-weight:400">(pelajar bertugas)</span></label>
+                <input type="text" id="assignKelasB" placeholder="cth: 2 DVM ETN">
+            </div>
+            <div class="form-group">
+                <label>Batch</label>
+                <input type="text" id="assignBatchB" placeholder="cth: 06">
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('assignNfcModal')">Batal</button>
+            <button class="btn btn-warning" onclick="submitAssignNfc()"><i class="fas fa-save"></i> Tetapkan Kad</button>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT INDIVIDU AHLI MODAL -->
+<div class="modal-overlay" id="editMemberModal">
+    <div class="modal" style="max-width:520px">
+        <div class="modal-title"><i class="fas fa-user-pen"></i> Edit Individu Ahli</div>
+        <input type="hidden" id="editMemberId">
+        <div class="form-grid">
+            <div class="form-group"><label>UID / NFC</label><input type="text" id="editMemberNfc" placeholder="cth: 04A3B2C1 atau BULK_..."></div>
+            <div class="form-group"><label>Nama</label><input type="text" id="editMemberName"></div>
+            <div class="form-group"><label>Kelas</label><input type="text" id="editMemberKelas" placeholder="cth: 2 DVM"></div>
+            <div class="form-group"><label>Course</label>
+                <select id="editMemberCourse">
+                    <option value="">-- Tiada --</option>
+                    <option value="ETN">ETN</option><option value="ETE">ETE</option>
+                    <option value="MTK">MTK</option><option value="MTA">MTA</option>
+                    <option value="BAK">BAK</option><option value="BKP">BKP</option>
+                    <option value="PPU">PPU</option><option value="MPI">MPI</option>
+                    <option value="CTP">CTP</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Batch</label><input type="text" id="editMemberBatch" placeholder="cth: 06"></div>
+            <div class="form-group"><label>Kategori / Peranan</label>
+                <select id="editMemberCategory">
+                    <option value="pelajar">Pelajar</option>
+                    <option value="guru">Guru</option>
+                    <option value="akp">AKP</option>
+                </select>
+            </div>
+        </div>
+        <div style="margin-top:8px;font-size:0.78rem;color:var(--text-muted)"><i class="fas fa-info-circle"></i> <b>Point</b> dan <b>No. IC</b> tidak boleh diubah di sini.</div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal('editMemberModal')">Batal</button>
+            <button class="btn btn-success" onclick="submitEditMember()"><i class="fas fa-save"></i> Simpan</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
